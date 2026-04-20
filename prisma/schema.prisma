@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas = ["public", "auth"]
+}
+
+model User {
+id       Int     @id @default(autoincrement())
+personId Int     @unique
+
+username String  @unique
+password String
+role         String?
+image    String?
+
+person   Person? @relation
+@@schema("auth")
+}
+
+model Person {
+id           Int            @id @default(autoincrement())
+userId       Int            @unique
+
+name         String
+phone        String?
+email        String         @unique
+work_hours   Json?
+institution  String?
+
+courses      Course[]        @relation("PersonToClass")
+tutorCourses Course[]        @relation("TutorToCourse")
+sessions     Session[]       @relation("SessionPersons")
+
+user         User           @relation(fields: [userId], references: [id])
+@@schema("public")
+}
+
+model Course {
+id           Int            @id @default(autoincrement())
+placeId      Int
+tutorId      Int
+
+name         String
+period       String
+
+session     Session[]
+participants Person[]       @relation("PersonToClass")
+
+place        Place          @relation(fields: [placeId], references: [id])
+tutor        Person          @relation("TutorToCourse", fields: [tutorId], references: [id])
+	@@map("Class")
+  @@schema("public")
+}
+
+model Place {
+id      Int     @id @default(autoincrement())
+name    String
+busy    Boolean @default(false)
+courses Course[]
+@@schema("public")
+}
+
+model Session {
+id          Int      @id @default(autoincrement())
+classId     Int
+
+date_init   DateTime
+date_end    DateTime
+hours_day   Int
+total_hours Int
+status      String
+
+persons     Person[]       @relation("SessionPersons")
+
+courses       Course    @relation(fields: [classId], references: [id])
+@@map("Session")
+@@schema("public")
+}
