@@ -100,4 +100,5 @@ model tokenLog {
 
   @@index([usuario_id])
   @@index([token])
+  @@schema("auth")
 }
