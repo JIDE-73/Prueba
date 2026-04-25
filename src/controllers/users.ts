@@ -1,31 +1,48 @@
-import bcript from 'bcryptjs';
-import prisma from '../../prisma/prismaClient';
-import {validationResult,check} from 'express-validator';
+import bcryptjs from "bcryptjs";
+import { Request, Response, NextFunction } from "express";
+import prisma from "../../prisma/prismaClient";
+import { validationResult, check } from "express-validator";
+import { User } from "../types";
 
-const creatUser = async (req:any, res:any, next:any ) =>{
-    const { username, password, image, personaId } = req.body;
+const createUser = async (req: Request, res: Response, next: NextFunction) => {
+  const { username, password, image, personId } = req.body as User;
 
-    await check('username').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('password').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('image').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('personaId').notEmpty.isInt().withMessage('Username no valido').run(req);
+  await check("username")
+    .notEmpty()
+    .withMessage("Username es requerido")
+    .run(req);
+  await check("password")
+    .notEmpty()
+    .withMessage("Password es requerido")
+    .run(req);
+  await check("image").notEmpty().withMessage("Image es requerido").run(req);
+  await check("personId")
+    .notEmpty()
+    .withMessage("PersonId es requerido")
+    .run(req);
 
-    const er = validationResult(req);
+  const er = validationResult(req);
 
-    if(!er.isEmpty()){
-        return res.status(400).json({ errors: er.array()});
-    }
+  if (!er.isEmpty()) {
+    return res.status(400).json({ errors: er.array() });
+  }
 
-    try{
-        const h = await bcript.hash(password, 10);
-        const newu = await prisma.user.create({
+  try {
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        image,
+        personId: Number(personId),
+      },
+    });
 
-        });
+    res.status(201).json({ message: "Usuario creado correctamente" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
 
-    }catch(e){
-
-    }
-    
-}
-
-export {};
+export { createUser };
