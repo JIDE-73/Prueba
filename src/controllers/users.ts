@@ -11,22 +11,10 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   await check("name").notEmpty().withMessage("Name es requerido").run(req);
   await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
   await check("email").notEmpty().withMessage("Email es requerido").run(req);
-  await check("work_hours")
-    .notEmpty()
-    .withMessage("Work hours es requerido")
-    .run(req);
-  await check("institution")
-    .notEmpty()
-    .withMessage("Institution es requerido")
-    .run(req);
-  await check("username")
-    .notEmpty()
-    .withMessage("Username es requerido")
-    .run(req);
-  await check("password")
-    .notEmpty()
-    .withMessage("Password es requerido")
-    .run(req);
+  await check("work_hours").notEmpty().withMessage("Work hours es requerido").run(req);
+  await check("institution").notEmpty().withMessage("Institution es requerido").run(req);
+  await check("username").notEmpty().withMessage("Username es requerido").run(req);
+  await check("password").notEmpty().withMessage("Password es requerido").run(req);
   await check("image").notEmpty().withMessage("Image es requerido").run(req);
 
   const er = validationResult(req);
@@ -75,7 +63,7 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
       !er.isEmpty() ||
       !["Administrador", "Tutor", "Estudiante"].includes(role)
     ) {
-      return res.status(400).json({ errors: er.array() });
+      return res.status(400).json({ message: "Role invalido" });
     }
 
     const users = await prisma.user.findMany({
