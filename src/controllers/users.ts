@@ -2,11 +2,23 @@ import bcryptjs from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 import prisma from "../../prisma/prismaClient";
 import { validationResult, check } from "express-validator";
-import { User } from "../types";
+import { User, Person } from "../types";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
-  const { username, password, image, personId } = req.body as User;
+  const { username, password, image } = req.body as User;
+  const { name, phone, email, work_hours, institution } = req.body as Person;
 
+  await check("name").notEmpty().withMessage("Name es requerido").run(req);
+  await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
+  await check("email").notEmpty().withMessage("Email es requerido").run(req);
+  await check("work_hours")
+    .notEmpty()
+    .withMessage("Work hours es requerido")
+    .run(req);
+  await check("institution")
+    .notEmpty()
+    .withMessage("Institution es requerido")
+    .run(req);
   await check("username")
     .notEmpty()
     .withMessage("Username es requerido")
@@ -16,10 +28,6 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     .withMessage("Password es requerido")
     .run(req);
   await check("image").notEmpty().withMessage("Image es requerido").run(req);
-  await check("personId")
-    .notEmpty()
-    .withMessage("PersonId es requerido")
-    .run(req);
 
   const er = validationResult(req);
 
@@ -29,12 +37,22 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const hashedPassword = await bcryptjs.hash(password, 10);
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         username,
         password: hashedPassword,
         image,
-        personId: Number(personId),
+      },
+    });
+
+    await prisma.person.create({
+      data: {
+        userId: user.id,
+        name,
+        phone,
+        email,
+        work_hours,
+        institution,
       },
     });
 
@@ -53,7 +71,10 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
 
     const er = validationResult(req);
 
-    if (!er.isEmpty() || !["Administrador", "Tutor", "Estudiante"].includes(role)) {
+    if (
+      !er.isEmpty() ||
+      !["Administrador", "Tutor", "Estudiante"].includes(role)
+    ) {
       return res.status(400).json({ errors: er.array() });
     }
 
@@ -66,7 +87,9 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
         include: { person: true },
       },
     });
-    res.status(200).json({ message: "Usuarios obtenidos correctamente", data: users });
+    res
+      .status(200)
+      .json({ message: "Usuarios obtenidos correctamente", data: users });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Error interno del servidor", error: e });
