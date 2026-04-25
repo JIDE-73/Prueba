@@ -51,7 +51,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+const getUsersRole = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const role = req.params.role as string;
 
@@ -84,4 +84,34 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { createUser, getUsers };
+const getStudentsCourse = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const courseId = req.params.courseId as string;
+    
+    await check("courseId").notEmpty().withMessage("Course ID es requerido").run(req);
+
+    const er = validationResult(req);
+    if (!er.isEmpty()) {
+      return res.status(400).json({ message: "Course ID invalido" });
+    }
+
+    const students = await prisma.user.findMany({
+      where: {
+        role: "Estudiante",
+        person: {
+          courses: {
+            some: {
+              id: Number(courseId),
+            },
+          },
+        },
+      },
+    });
+    res.status(200).json({ message: "Estudiantes obtenidos correctamente", data: students });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
+
+export { createUser, getUsersRole, getStudentsCourse };
