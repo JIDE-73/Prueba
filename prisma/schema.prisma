@@ -17,7 +17,6 @@ enum Role {
 }
 model User {
   id        Int        @id @default(autoincrement())
-  personId  Int        @unique
   username  String     @unique
   password  String
   role      Role @default(Estudiante)
@@ -37,7 +36,7 @@ model Person {
   work_hours   Json?
   institution  String?
   tutorCourses Course[]  @relation("TutorToCourse")
-  user         User      @relation(fields: [userId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courses      Course[]  @relation("PersonToClass")
   sessions     Session[] @relation("SessionPersons")
 
