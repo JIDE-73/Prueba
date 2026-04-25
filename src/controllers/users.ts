@@ -45,4 +45,32 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { createUser };
+const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const role = req.params.role as string;
+
+    await check("role").notEmpty().withMessage("Role es requerido").run(req);
+
+    const er = validationResult(req);
+
+    if (!er.isEmpty() || !["Administrador", "Tutor", "Estudiante"].includes(role)) {
+      return res.status(400).json({ errors: er.array() });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { role: role as any },
+      select: {
+        id: true,
+        username: true,
+        image: true,
+        include: { person: true },
+      },
+    });
+    res.status(200).json({ message: "Usuarios obtenidos correctamente", data: users });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
+
+export { createUser, getUsers };

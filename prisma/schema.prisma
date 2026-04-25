@@ -8,13 +8,19 @@ datasource db {
   url      = env("DATABASE_URL")
   schemas  = ["auth", "public"]
 }
+enum Role {
+  Administrador
+  Tutor
+  Estudiante
 
+  @@schema("auth")
+}
 model User {
   id        Int        @id @default(autoincrement())
   personId  Int        @unique
   username  String     @unique
   password  String
-  role      String?
+  role      Role @default(Estudiante)
   image     String?
   tokenLogs tokenLog[]
   person    Person?
