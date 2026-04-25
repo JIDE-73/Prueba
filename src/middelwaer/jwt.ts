@@ -1,9 +1,9 @@
-import "dotenv/config";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
+import {Response, NextFunction } from "express";
 import prisma from "../../prisma/prismaClient";
 
-export const verify = async (req: any, res: any, next: any) => {
+const verify = async (req: any, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -35,7 +35,7 @@ export const verify = async (req: any, res: any, next: any) => {
 
     const log = await prisma.tokenLog.findUnique({
       where: { token },
-      include: { usuario: true },
+      include: { user: true },
     });
 
     if (!log) {
@@ -51,5 +51,29 @@ export const verify = async (req: any, res: any, next: any) => {
         error: "Sesión revocada",
       });
     }
-  } catch (error) {}
+
+    if (!log.user) {
+      return res.status(401).json({
+        message: "Usuario inactivo o no encontrado",
+        error: "Usuario inactivo o no encontrado",
+      });
+    }
+
+    req.user = {
+      id: log.user.id,
+      username: log.user.username,
+      email: log.user.email,
+    };
+
+    req.token = token;
+
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: error,
+    });
+  }
 };
+
+export { verify };
