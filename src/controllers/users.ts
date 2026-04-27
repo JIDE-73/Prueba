@@ -6,7 +6,8 @@ import { User, Person } from "../types";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   const { username, password, image } = req.body as User;
-  const { name, phone, email, work_hours, institution, role } = req.body as Person;
+  const { name, phone, email, work_hours, institution, role } =
+    req.body as Person;
 
   await check("name").notEmpty().withMessage("Name es requerido").run(req);
   await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
@@ -60,6 +61,8 @@ const getUsersRole = async (
 ) => {
   try {
     const role = req.params.role as string;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = 10;
 
     await check("role").notEmpty().withMessage("Role es requerido").run(req);
 
@@ -72,14 +75,36 @@ const getUsersRole = async (
       return res.status(400).json({ message: "Role invalido" });
     }
 
-    const users = await prisma.person.findMany({
-      where: {
-        role: role as any,
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      prisma.person.findMany({
+        where: {
+          role: role as any,
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.person.count({
+        where: {
+          role: role as any,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.status(200).json({
+      message: "Usuarios obtenidos correctamente",
+      data: users,
+      pagination: {
+        page,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
       },
     });
-    res
-      .status(200)
-      .json({ message: "Usuarios obtenidos correctamente", data: users });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Error interno del servidor", error: e });

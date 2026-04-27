@@ -9,7 +9,7 @@ import { verify } from "../middleware/jwt";
 const app: Application = express();
 
 app.post("/create", createUser);
-app.get("/get-by-role/:role", verify, getUsersRole);
-app.get("/get-by-course/:courseId", verify, getStudentsCourse);
+app.get("/get-by-role/:role", getUsersRole);
+app.get("/get-by-course/:courseId", getStudentsCourse);
 
 export default app;
