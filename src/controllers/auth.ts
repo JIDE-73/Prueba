@@ -47,7 +47,6 @@ const login = async (req: Request, res: Response) => {
       { expiresIn: "32h" },
     );
 
-    //log the token in the database
     await prisma.tokenLog.create({
       data: {
         usuario_id: u.id,
@@ -73,13 +72,25 @@ const login = async (req: Request, res: Response) => {
 const logout = async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ message: "Token no proporcionado" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ message: "Token no proporcionado o inválido" });
   }
 
+  const token = authHeader.slice(7);
+
   try {
+    const tokenRecord = await prisma.tokenLog.findUnique({
+      where: { token },
+    });
+
+    if (!tokenRecord || tokenRecord.revocado) {
+      return res.status(401).json({ message: "Token inválido o ya revocado" });
+    }
+
     await prisma.tokenLog.update({
-      where: { token: authHeader },
+      where: { token },
       data: { revocado: true },
     });
 
@@ -87,7 +98,10 @@ const logout = async (req: Request, res: Response) => {
       message: "Logout exitoso",
     });
   } catch (e) {
-    res.status(500).json({ message: "Error al cerrar sesión" });
+    console.log("Error al cerrar sesión: ", e);
+    return res
+      .status(500)
+      .json({ message: "Error al cerrar sesión", error: e });
   }
 };
 
