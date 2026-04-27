@@ -78,14 +78,14 @@ const getUsersRole = async (
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      prisma.person.findMany({
+      await prisma.person.findMany({
         where: {
           role: role as any,
         },
         skip,
         take: limit,
       }),
-      prisma.person.count({
+      await prisma.person.count({
         where: {
           role: role as any,
         },

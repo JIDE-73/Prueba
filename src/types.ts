@@ -10,11 +10,19 @@ type Person = {
   email: string;
   work_hours?: JSON;
   institution?: string;
-  role: ("Estudiante" | "Tutor" | "Administrador");
+  role: "Estudiante" | "Tutor" | "Administrador";
 };
 
 type login = {
   username: string;
   password: string;
 };
-export { User, Person, login };
+
+type Course = {
+  placeId: number;
+  tutorId: number;
+  name: string;
+  period: string;
+};
+
+export { User, Person, login, Course };
