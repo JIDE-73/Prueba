@@ -6,56 +6,53 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public", "auth"]
+  schemas  = ["auth", "public"]
 }
+enum Role {
+  Administrador
+  Tutor
+  Estudiante
 
+  @@schema("auth")
+}
 model User {
-  id       Int @id @default(autoincrement())
-  personId Int @unique
-
-  username String  @unique
-  password String
-  role     String?
-  image    String?
-
-  person    Person?    @relation
+  id        Int        @id @default(autoincrement())
+  username  String     @unique
+  password  String
+  role      Role @default(Estudiante)
+  image     String?
   tokenLogs tokenLog[]
+  person    Person?
 
   @@schema("auth")
 }
 
 model Person {
-  id     Int @id @default(autoincrement())
-  userId Int @unique
-
-  name        String
-  phone       String?
-  email       String  @unique
-  work_hours  Json?
-  institution String?
-
-  courses      Course[]  @relation("PersonToClass")
+  id           Int       @id @default(autoincrement())
+  userId       Int       @unique
+  name         String
+  phone        String?
+  email        String    @unique
+  work_hours   Json?
+  institution  String?
   tutorCourses Course[]  @relation("TutorToCourse")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses      Course[]  @relation("PersonToClass")
   sessions     Session[] @relation("SessionPersons")
-
-  user User @relation(fields: [userId], references: [id])
 
   @@schema("public")
 }
 
 model Course {
-  id      Int @id @default(autoincrement())
-  placeId Int
-  tutorId Int
-
-  name   String
-  period String
-
+  id           Int       @id @default(autoincrement())
+  placeId      Int
+  tutorId      Int
+  name         String
+  period       String
+  place        Place     @relation(fields: [placeId], references: [id])
+  tutor        Person    @relation("TutorToCourse", fields: [tutorId], references: [id])
   session      Session[]
   participants Person[]  @relation("PersonToClass")
-
-  place Place  @relation(fields: [placeId], references: [id])
-  tutor Person @relation("TutorToCourse", fields: [tutorId], references: [id])
 
   @@map("Class")
   @@schema("public")
@@ -71,33 +68,29 @@ model Place {
 }
 
 model Session {
-  id      Int @id @default(autoincrement())
-  classId Int
-
+  id          Int      @id @default(autoincrement())
+  classId     Int
   date_init   DateTime
   date_end    DateTime
   hours_day   Int
   total_hours Int
   status      String
-
-  persons Person[] @relation("SessionPersons")
-
-  courses Course @relation(fields: [classId], references: [id])
+  courses     Course   @relation(fields: [classId], references: [id])
+  persons     Person[] @relation("SessionPersons")
 
   @@map("Session")
   @@schema("public")
 }
 
 model tokenLog {
-  id         Int @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   usuario_id Int
-
-  token     String   @unique
-  revocado  Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  token      String   @unique
+  revocado   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 
   @@index([usuario_id])
   @@index([token])
+  @@schema("auth")
 }

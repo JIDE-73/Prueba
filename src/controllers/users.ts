@@ -1,31 +1,117 @@
-import bcript from 'bcryptjs';
-import prisma from '../../prisma/prismaClient';
-import {validationResult,check} from 'express-validator';
+import bcryptjs from "bcryptjs";
+import { Request, Response, NextFunction } from "express";
+import prisma from "../../prisma/prismaClient";
+import { validationResult, check } from "express-validator";
+import { User, Person } from "../types";
 
-const creatUser = async (req:any, res:any, next:any ) =>{
-    const { username, password, image, personaId } = req.body;
+const createUser = async (req: Request, res: Response, next: NextFunction) => {
+  const { username, password, image } = req.body as User;
+  const { name, phone, email, work_hours, institution } = req.body as Person;
 
-    await check('username').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('password').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('image').notEmpty.isString().withMessage('Username no valido').run(req);
-    await check('personaId').notEmpty.isInt().withMessage('Username no valido').run(req);
+  await check("name").notEmpty().withMessage("Name es requerido").run(req);
+  await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
+  await check("email").notEmpty().withMessage("Email es requerido").run(req);
+  await check("work_hours").notEmpty().withMessage("Work hours es requerido").run(req);
+  await check("institution").notEmpty().withMessage("Institution es requerido").run(req);
+  await check("username").notEmpty().withMessage("Username es requerido").run(req);
+  await check("password").notEmpty().withMessage("Password es requerido").run(req);
+  await check("image").notEmpty().withMessage("Image es requerido").run(req);
+
+  const er = validationResult(req);
+
+  if (!er.isEmpty()) {
+    return res.status(400).json({ errors: er.array() });
+  }
+
+  try {
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        image,
+      },
+    });
+
+    await prisma.person.create({
+      data: {
+        userId: user.id,
+        name,
+        phone,
+        email,
+        work_hours,
+        institution,
+      },
+    });
+
+    res.status(201).json({ message: "Usuario creado correctamente" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
+
+const getUsersRole = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const role = req.params.role as string;
+
+    await check("role").notEmpty().withMessage("Role es requerido").run(req);
 
     const er = validationResult(req);
 
-    if(!er.isEmpty()){
-        return res.status(400).json({ errors: er.array()});
+    if (
+      !er.isEmpty() ||
+      !["Administrador", "Tutor", "Estudiante"].includes(role)
+    ) {
+      return res.status(400).json({ message: "Role invalido" });
     }
 
-    try{
-        const h = await bcript.hash(password, 10);
-        const newu = await prisma.user.create({
+    const users = await prisma.user.findMany({
+      where: { role: role as any },
+      select: {
+        id: true,
+        username: true,
+        image: true,
+        include: { person: true },
+      },
+    });
+    res
+      .status(200)
+      .json({ message: "Usuarios obtenidos correctamente", data: users });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
 
-        });
-
-    }catch(e){
-
-    }
+const getStudentsCourse = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const courseId = req.params.courseId as string;
     
-}
+    await check("courseId").notEmpty().withMessage("Course ID es requerido").run(req);
 
-export {};
+    const er = validationResult(req);
+    if (!er.isEmpty()) {
+      return res.status(400).json({ message: "Course ID invalido" });
+    }
+
+    const students = await prisma.user.findMany({
+      where: {
+        role: "Estudiante",
+        person: {
+          courses: {
+            some: {
+              id: Number(courseId),
+            },
+          },
+        },
+      },
+    });
+    res.status(200).json({ message: "Estudiantes obtenidos correctamente", data: students });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
+
+export { createUser, getUsersRole, getStudentsCourse };
