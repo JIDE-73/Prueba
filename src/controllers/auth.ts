@@ -42,7 +42,6 @@ const login = async (req: Request, res: Response) => {
       {
         uId: u.id,
         username: u.username,
-        email: u.email,
       },
       process.env.JWT_SECRET!,
       { expiresIn: "32h" },
