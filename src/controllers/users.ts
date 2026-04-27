@@ -111,7 +111,7 @@ const getUsersRole = async (
   }
 };
 
-const getStudentsCourse = async (
+const getCourse = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -130,7 +130,7 @@ const getStudentsCourse = async (
       return res.status(400).json({ message: "Course ID invalido" });
     }
 
-    const students = await prisma.course.findFirst({
+    const course = await prisma.course.findFirst({
       where: { id: Number(courseId) },
       include: {
         place: true,
@@ -141,11 +141,11 @@ const getStudentsCourse = async (
     });
     res
       .status(200)
-      .json({ message: "Estudiantes obtenidos correctamente", data: students });
+      .json({ message: "Estudiantes obtenidos correctamente", data: course });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Error interno del servidor", error: e });
   }
 };
 
-export { createUser, getUsersRole, getStudentsCourse };
+export { createUser, getUsersRole, getCourse };
