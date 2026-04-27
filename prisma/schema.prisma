@@ -19,7 +19,6 @@ model User {
   id        Int        @id @default(autoincrement())
   username  String     @unique
   password  String
-  role      Role @default(Estudiante)
   image     String?
   tokenLogs tokenLog[]
   person    Person?
@@ -35,6 +34,8 @@ model Person {
   email        String    @unique
   work_hours   Json?
   institution  String?
+  role         Role @default(Estudiante)
+
   tutorCourses Course[]  @relation("TutorToCourse")
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courses      Course[]  @relation("PersonToClass")
@@ -49,6 +50,7 @@ model Course {
   tutorId      Int
   name         String
   period       String
+  
   place        Place     @relation(fields: [placeId], references: [id])
   tutor        Person    @relation("TutorToCourse", fields: [tutorId], references: [id])
   session      Session[]
