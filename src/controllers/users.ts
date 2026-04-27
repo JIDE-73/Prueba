@@ -6,13 +6,14 @@ import { User, Person } from "../types";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   const { username, password, image } = req.body as User;
-  const { name, phone, email, work_hours, institution } = req.body as Person;
+  const { name, phone, email, work_hours, institution, role } = req.body as Person;
 
   await check("name").notEmpty().withMessage("Name es requerido").run(req);
   await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
   await check("email").notEmpty().withMessage("Email es requerido").run(req);
   await check("work_hours").notEmpty().withMessage("Work hours es requerido").run(req);
   await check("institution").notEmpty().withMessage("Institution es requerido").run(req);
+  await check("role").notEmpty().withMessage("Role es requerido").run(req);
   await check("username").notEmpty().withMessage("Username es requerido").run(req);
   await check("password").notEmpty().withMessage("Password es requerido").run(req);
   await check("image").notEmpty().withMessage("Image es requerido").run(req);
@@ -39,8 +40,9 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
         name,
         phone,
         email,
-        work_hours,
+        work_hours: JSON.stringify(work_hours),
         institution,
+        role,
       },
     });
 
@@ -51,7 +53,11 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const getUsersRole = async (req: Request, res: Response, next: NextFunction) => {
+const getUsersRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const role = req.params.role as string;
 
@@ -61,18 +67,14 @@ const getUsersRole = async (req: Request, res: Response, next: NextFunction) => 
 
     if (
       !er.isEmpty() ||
-      !["Administrador", "Tutor", "Estudiante"].includes(role)
+      !["Estudiante", "Tutor", "Administrador"].includes(role)
     ) {
       return res.status(400).json({ message: "Role invalido" });
     }
 
-    const users = await prisma.user.findMany({
-      where: { role: role as any },
-      select: {
-        id: true,
-        username: true,
-        image: true,
-        include: { person: true },
+    const users = await prisma.person.findMany({
+      where: {
+        role: role as any,
       },
     });
     res
@@ -84,30 +86,37 @@ const getUsersRole = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
-const getStudentsCourse = async (req: Request, res: Response, next: NextFunction) => {
+const getStudentsCourse = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const courseId = req.params.courseId as string;
-    
-    await check("courseId").notEmpty().withMessage("Course ID es requerido").run(req);
+
+    await check("courseId")
+      .notEmpty()
+      .withMessage("Course ID es requerido")
+      .run(req);
 
     const er = validationResult(req);
+
     if (!er.isEmpty()) {
       return res.status(400).json({ message: "Course ID invalido" });
     }
 
-    const students = await prisma.user.findMany({
-      where: {
-        role: "Estudiante",
-        person: {
-          courses: {
-            some: {
-              id: Number(courseId),
-            },
-          },
-        },
+    const students = await prisma.course.findFirst({
+      where: { id: Number(courseId) },
+      include: {
+        place: true,
+        tutor: true,
+        session: true,
+        participants: true,
       },
     });
-    res.status(200).json({ message: "Estudiantes obtenidos correctamente", data: students });
+    res
+      .status(200)
+      .json({ message: "Estudiantes obtenidos correctamente", data: students });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Error interno del servidor", error: e });

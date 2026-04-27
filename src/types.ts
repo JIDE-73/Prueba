@@ -10,6 +10,7 @@ type Person = {
   email: string;
   work_hours?: JSON;
   institution?: string;
+  role: ("Estudiante" | "Tutor" | "Administrador");
 };
 
 type login = {
