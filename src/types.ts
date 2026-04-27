@@ -11,4 +11,9 @@ type Person = {
   work_hours?: JSON;
   institution?: string;
 };
-export { User, Person };
+
+type login = {
+  username: string;
+  password: string;
+};
+export { User, Person, login };
