@@ -134,7 +134,6 @@ const getCourse = async (
       where: { id: Number(courseId) },
       include: {
         tutor: true,
-        session: true,
         participants: true,
       },
     });
