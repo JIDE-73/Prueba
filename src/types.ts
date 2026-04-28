@@ -22,7 +22,7 @@ type Course = {
   placeId: number;
   tutorId: number;
   name: string;
+  place: string;
   period: string;
 };
-
-export { User, Person, login, Course };
+export { User, Person, login, Course};

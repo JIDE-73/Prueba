@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   schemas  = ["auth", "public"]
 }
 enum Role {
@@ -46,26 +45,17 @@ model Person {
 
 model Course {
   id           Int       @id @default(autoincrement())
-  placeId      Int
+
   tutorId      Int
   name         String
   period       String
+  place         String
   
-  place        Place     @relation(fields: [placeId], references: [id])
   tutor        Person    @relation("TutorToCourse", fields: [tutorId], references: [id])
   session      Session[]
   participants Person[]  @relation("PersonToClass")
 
   @@map("Class")
-  @@schema("public")
-}
-
-model Place {
-  id      Int      @id @default(autoincrement())
-  name    String
-  busy    Boolean  @default(false)
-  courses Course[]
-
   @@schema("public")
 }
 
