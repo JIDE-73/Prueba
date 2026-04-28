@@ -4,13 +4,13 @@ import { check, validationResult } from "express-validator";
 import { Course } from "../types";
 
 const createCourse = async (req: Request, res: Response) => {
-  const { name, period, placeId, tutorId } = req.body as Course;
+  const { name, period, tutorId, place } = req.body as Course;
 
   await check("name").notEmpty().withMessage("Name es requerido").run(req);
   await check("period").notEmpty().withMessage("Period es requerido").run(req);
-  await check("placeId")
+  await check("place")
     .notEmpty()
-    .withMessage("PlaceId es requerido")
+    .withMessage("Place es requerido")
     .run(req);
   await check("tutorId")
     .notEmpty()
@@ -26,7 +26,7 @@ const createCourse = async (req: Request, res: Response) => {
   try {
     await prisma.course.create({
       data: {
-        placeId,
+        place,
         tutorId,
         name,
         period,
@@ -35,8 +35,6 @@ const createCourse = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Curso creado correctamente" });
   } catch (e) {
-    placeId;
-    console.error(e);
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };

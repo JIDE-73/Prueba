@@ -133,7 +133,6 @@ const getCourse = async (
     const course = await prisma.course.findFirst({
       where: { id: Number(courseId) },
       include: {
-        place: true,
         tutor: true,
         session: true,
         participants: true,
