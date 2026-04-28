@@ -10,7 +10,6 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 
 //courses
-
 app.use("/courses", courseRoutes);
 
 export default app;
