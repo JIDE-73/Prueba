@@ -24,5 +24,11 @@ type Course = {
   name: string;
   place: string;
   period: string;
+
+  date_init: Date;
+  date_end: Date;
+  hours_day: number;
+  total_hours: number;
+  status: string;
 };
 export { User, Person, login, Course};

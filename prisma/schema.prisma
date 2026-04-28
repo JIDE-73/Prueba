@@ -7,12 +7,21 @@ datasource db {
   provider = "postgresql"
   schemas  = ["auth", "public"]
 }
+
 enum Role {
   Administrador
   Tutor
   Estudiante
 
   @@schema("auth")
+}
+
+enum CourseStatus {
+  Activo
+  Inactivo
+  Finalizado
+
+  @@schema("public")
 }
 model User {
   id        Int        @id @default(autoincrement())
@@ -38,7 +47,6 @@ model Person {
   tutorCourses Course[]  @relation("TutorToCourse")
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courses      Course[]  @relation("PersonToClass")
-  sessions     Session[] @relation("SessionPersons")
 
   @@schema("public")
 }
@@ -51,26 +59,16 @@ model Course {
   period       String
   place         String
   
-  tutor        Person    @relation("TutorToCourse", fields: [tutorId], references: [id])
-  session      Session[]
-  participants Person[]  @relation("PersonToClass")
-
-  @@map("Class")
-  @@schema("public")
-}
-
-model Session {
-  id          Int      @id @default(autoincrement())
-  classId     Int
   date_init   DateTime
   date_end    DateTime
   hours_day   Int
   total_hours Int
-  status      String
-  courses     Course   @relation(fields: [classId], references: [id])
-  persons     Person[] @relation("SessionPersons")
+  status      CourseStatus
+  
+  tutor        Person    @relation("TutorToCourse", fields: [tutorId], references: [id])
+  participants Person[]  @relation("PersonToClass")
 
-  @@map("Session")
+  @@map("Class")
   @@schema("public")
 }
 
