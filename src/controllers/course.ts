@@ -49,6 +49,14 @@ const createCourse = async (req: Request, res: Response) => {
   }
 
   try {
+    const tutor = await prisma.person.findFirst({
+      where: { id: tutorId, role: "Tutor" },
+    });
+
+    if (!tutor) {
+      return res.status(404).json({ message: "Tutor no encontrado" });
+    }
+
     await prisma.course.create({
       data: {
         place,
