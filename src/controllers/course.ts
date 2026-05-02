@@ -60,7 +60,7 @@ const createCourse = async (req: Request, res: Response) => {
     await prisma.course.create({
       data: {
         place,
-        tutorId,
+        tutorId: Number(tutorId),
         name,
         period,
         date_init,
@@ -73,6 +73,7 @@ const createCourse = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Curso creado correctamente" });
   } catch (e) {
+    console.log("error", e);
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
@@ -123,7 +124,7 @@ const getCourses = async (req: Request, res: Response) => {
 };
 
 const getCourseSearch = async (req: Request, res: Response) => {
-  const search = req.params.name as string;
+  const search = req.params.search as string;
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = 10;
 
