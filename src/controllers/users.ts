@@ -12,11 +12,23 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
   await check("name").notEmpty().withMessage("Name es requerido").run(req);
   await check("phone").notEmpty().withMessage("Phone es requerido").run(req);
   await check("email").notEmpty().withMessage("Email es requerido").run(req);
-  await check("work_hours").notEmpty().withMessage("Work hours es requerido").run(req);
-  await check("institution").notEmpty().withMessage("Institution es requerido").run(req);
+  await check("work_hours")
+    .notEmpty()
+    .withMessage("Work hours es requerido")
+    .run(req);
+  await check("institution")
+    .notEmpty()
+    .withMessage("Institution es requerido")
+    .run(req);
   await check("role").notEmpty().withMessage("Role es requerido").run(req);
-  await check("username").notEmpty().withMessage("Username es requerido").run(req);
-  await check("password").notEmpty().withMessage("Password es requerido").run(req);
+  await check("username")
+    .notEmpty()
+    .withMessage("Username es requerido")
+    .run(req);
+  await check("password")
+    .notEmpty()
+    .withMessage("Password es requerido")
+    .run(req);
   await check("image").notEmpty().withMessage("Image es requerido").run(req);
 
   const er = validationResult(req);
@@ -111,11 +123,7 @@ const getUsersRole = async (
   }
 };
 
-const getCourse = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+const getCourse = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const courseId = req.params.courseId as string;
 
@@ -146,4 +154,61 @@ const getCourse = async (
   }
 };
 
-export { createUser, getUsersRole, getCourse };
+const getMyCourses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const personId = req.params.personId;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = 10;
+
+    await check("personId")
+      .notEmpty()
+      .withMessage("Person ID es requerido")
+      .run(req);
+
+    const er = validationResult(req);
+
+    if (!er.isEmpty()) {
+      return res.status(400).json({ message: "Person ID invalido" });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [courses, total] = await Promise.all([
+      await prisma.course.findMany({
+        where: {
+          participants: { some: { id: Number(personId) } },
+        },
+        skip,
+        take: limit,
+      }),
+      await prisma.course.count({
+        where: {
+          participants: { some: { id: Number(personId) } },
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.status(200).json({
+      message: "Cursos obtenidos correctamente",
+      data: courses,
+      pagination: {
+        page,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Error interno del servidor", error: e });
+  }
+};
+
+export { createUser, getUsersRole, getCourse, getMyCourses };
