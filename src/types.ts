@@ -31,4 +31,10 @@ type Course = {
   total_hours: number;
   status: string;
 };
-export { User, Person, login, Course};
+
+type addToCourse = {
+  personId: number;
+  courseId: number;
+  tutorId: number;
+};
+export { User, Person, login, Course, addToCourse };

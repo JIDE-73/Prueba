@@ -1,7 +1,7 @@
 import prisma from "../../prisma/prismaClient";
 import { Request, Response } from "express";
 import { check, validationResult } from "express-validator";
-import { Course } from "../types";
+import { Course, addToCourse } from "../types";
 import { CourseStatus } from "../../generated/prisma/browser";
 
 const createCourse = async (req: Request, res: Response) => {
@@ -185,4 +185,79 @@ const getCourseSearch = async (req: Request, res: Response) => {
   }
 };
 
-export { createCourse, getCourses, getCourseSearch };
+const addToCourse = async (req: Request, res: Response) => {
+  const { personId, courseId, tutorId } = req.body as addToCourse;
+
+  await check("personId")
+    .notEmpty()
+    .withMessage("PersonId es requerido")
+    .run(req);
+  await check("courseId")
+    .notEmpty()
+    .withMessage("CourseId es requerido")
+    .run(req);
+  await check("tutorId")
+    .notEmpty()
+    .withMessage("TutorId es requerido")
+    .run(req);
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: { participants: true, tutor: true }, // Incluir para verificar duplicados
+    });
+    if (!course) {
+      return res.status(404).json({ message: "Curso no encontrado" });
+    }
+
+    // Verificar que personId sea un estudiante existente
+    const student = await prisma.person.findUnique({
+      where: { id: personId },
+    });
+    if (!student || student.role !== "Estudiante") {
+      return res
+        .status(404)
+        .json({ message: "Estudiante no encontrado o rol inválido" });
+    }
+
+    // Verificar que tutorId sea un tutor existente
+    const tutor = await prisma.person.findUnique({
+      where: { id: tutorId },
+    });
+    if (!tutor || tutor.role !== "Tutor") {
+      return res
+        .status(404)
+        .json({ message: "Tutor no encontrado o rol inválido" });
+    }
+
+    // Verificar que el estudiante no esté ya en el curso
+    const isAlreadyParticipant = course.participants.some(
+      (p) => p.id === personId,
+    );
+    if (isAlreadyParticipant) {
+      return res
+        .status(400)
+        .json({ message: "El estudiante ya está en el curso" });
+    }
+
+    await prisma.course.update({
+      where: { id: courseId },
+      data: {
+        participants: { connect: { id: personId } },
+        tutor: { connect: { id: tutorId } },
+      },
+    });
+
+    res.status(200).json({ message: "Se agrego al curso correctamente" });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+export { createCourse, getCourses, getCourseSearch, addToCourse };
