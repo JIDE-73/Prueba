@@ -160,11 +160,10 @@ const getMyCourses = async (
   res: Response,
   next: NextFunction,
 ) => {
+  const personId = req.params.personId;
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = 10;
   try {
-    const personId = req.params.personId;
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = 10;
-
     await check("personId")
       .notEmpty()
       .withMessage("Person ID es requerido")
@@ -176,12 +175,20 @@ const getMyCourses = async (
       return res.status(400).json({ message: "Person ID invalido" });
     }
 
+    const person = await prisma.person.findUnique({
+      where: { userId: Number(personId) },
+    });
+
+    if (!person) {
+      return res.status(404).json({ message: "Person not found" });
+    }
+
     const skip = (page - 1) * limit;
 
     const [courses, total] = await Promise.all([
       await prisma.course.findMany({
         where: {
-          participants: { some: { id: Number(personId) } },
+          participants: { some: { id: Number(person.id) } },
         },
         include: {
           tutor: true,
