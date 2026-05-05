@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import prisma from "../../prisma/prismaClient";
 import { validationResult, check } from "express-validator";
 import { User, Person } from "../types";
+import { count } from "node:console";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   const { username, password, image } = req.body as User;
@@ -181,6 +182,9 @@ const getMyCourses = async (
       await prisma.course.findMany({
         where: {
           participants: { some: { id: Number(personId) } },
+        },
+        include: {
+          tutor: true,
         },
         skip,
         take: limit,
